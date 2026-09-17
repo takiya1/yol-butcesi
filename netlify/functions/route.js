@@ -1,10 +1,18 @@
-export default async (req) => {
-  if (req.httpMethod !== "POST") {
-    return { statusCode: 405, body: "Method not allowed" };
+export default async (request) => {
+  if (request.method !== "POST") {
+    return new Response(
+      JSON.stringify({ error: "Sadece POST isteği kabul edilir" }),
+      {
+        status: 405,
+        headers: {
+          "Content-Type": "application/json"
+        }
+      }
+    );
   }
 
   try {
-    const { from, to } = JSON.parse(req.body);
+    const { from, to } = await request.json();
 
     const response = await fetch(
       "https://api.openrouteservice.org/v2/directions/driving-car/geojson",
@@ -27,15 +35,24 @@ export default async (req) => {
 
     const data = await response.text();
 
-    return {
-      statusCode: response.status,
-      headers: { "Content-Type": "application/json" },
-      body: data
-    };
+    return new Response(data, {
+      status: response.status,
+      headers: {
+        "Content-Type": "application/json"
+      }
+    });
   } catch (error) {
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: "Rota hesaplanamadı" })
-    };
+    return new Response(
+      JSON.stringify({
+        error: "Rota hesaplanamadı",
+        detail: error.message
+      }),
+      {
+        status: 500,
+        headers: {
+          "Content-Type": "application/json"
+        }
+      }
+    );
   }
 };
