@@ -1,18 +1,14 @@
-export default async (request) => {
-  if (request.method !== "POST") {
-    return new Response(
-      JSON.stringify({ error: "Sadece POST isteği kabul edilir" }),
-      {
-        status: 405,
-        headers: {
-          "Content-Type": "application/json"
-        }
-      }
-    );
+exports.handler = async function (event) {
+  if (event.httpMethod !== "POST") {
+    return {
+      statusCode: 405,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ error: "Sadece POST destekleniyor" })
+    };
   }
 
   try {
-    const { from, to } = await request.json();
+    const { from, to } = JSON.parse(event.body || "{}");
 
     const response = await fetch(
       "https://api.openrouteservice.org/v2/directions/driving-car/geojson",
@@ -33,26 +29,16 @@ export default async (request) => {
       }
     );
 
-    const data = await response.text();
-
-    return new Response(data, {
-      status: response.status,
-      headers: {
-        "Content-Type": "application/json"
-      }
-    });
+    return {
+      statusCode: response.status,
+      headers: { "Content-Type": "application/json" },
+      body: await response.text()
+    };
   } catch (error) {
-    return new Response(
-      JSON.stringify({
-        error: "Rota hesaplanamadı",
-        detail: error.message
-      }),
-      {
-        status: 500,
-        headers: {
-          "Content-Type": "application/json"
-        }
-      }
-    );
+    return {
+      statusCode: 500,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ error: error.message })
+    };
   }
 };
