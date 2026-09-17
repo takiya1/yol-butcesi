@@ -1,10 +1,14 @@
-export default async (req) => {
-  if (req.httpMethod !== "POST") {
-    return { statusCode: 405, body: "Method not allowed" };
+exports.handler = async function (event) {
+  if (event.httpMethod !== "POST") {
+    return {
+      statusCode: 405,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ error: "Sadece POST destekleniyor" })
+    };
   }
 
   try {
-    const { south, west, north, east } = JSON.parse(req.body);
+    const { south, west, north, east } = JSON.parse(event.body || "{}");
 
     const query = `
       [out:json][timeout:25];
@@ -27,17 +31,16 @@ export default async (req) => {
       }
     );
 
-    const data = await response.text();
-
     return {
       statusCode: response.status,
       headers: { "Content-Type": "application/json" },
-      body: data
+      body: await response.text()
     };
   } catch (error) {
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: "OpenStreetMap sorgusu başarısız" })
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ error: error.message })
     };
   }
 };
